@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <style type="text/css">
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        #bgSpace {
+            margin: 0 auto;
+            margin-top: 20px;
+            width: 480px;
+            height: 853px;
+            overflow: hidden;
+            position: relative;
+            background: url("images/bg.jpg");
+            /*background-position: 0px 0px;*/
+        }
+
+        #mine {
+            width: 98px;
+            height: 122px;
+            overflow: hidden;
+            background: url("images/me.png");
+            position: absolute;
+            bottom: 0px;
+            left: 50%;
+            margin-left: -49px;
+        }
+
+        .bullet {
+            display: block;
+            background: url("images/bullet.png");
+            width: 7px;
+            height: 18px;
+            position: absolute;
+        }
+
+        .s_enemy {
+            width: 59px;
+            height: 36px;
+            background-image: url(images/plane1.png);
+            position: absolute;
+            top: -36px;
+        }
+
+        .m_enemy {
+            width: 70px;
+            height: 92px;
+            background-image: url(images/plane2.png);
+            position: absolute;
+            top: -92px;
+        }
+
+        .b_enemy {
+            width: 165px;
+            height: 256px;
+            background-image: url(images/plane3.png);
+            position: absolute;
+            top: -256px;
+        }
+    </style>
+
+    <script type="text/javascript">
+
+        /**
+         * 创建背景，并动起来
+         */
+        function createBg() {
+            var _me = this;
+            this.timer = 0;
+            this.top = 0;
+            /**
+             * 创建幕布
+             */
+            this.createSpace = function () {
+                this.div = document.createElement("div");
+                this.div.id = "bgSpace";
+                //添加到body中
+                document.getElementsByTagName("body")[0].appendChild(this.div);
+            }
+            /**
+             * 让幕布动起来
+             */
+            this.move = function () {
+                window.clearTimeout(_me.timer);
+                _me.div.style.backgroundPosition = "0px " + _me.top + "px";
+                if (_me.top >= 853) {
+                    _me.top = 0;
+                } else {
+                    _me.top += 10;
+                }
+                _me.timer = window.setTimeout(_me.move, 20);
+            }
+
+            /**
+             * 初始化
+             */
+            this.init = function () {
+                this.createSpace();
+                this.move();
+            }
+        }
+
+        /**
+         * 创建己方飞机，并开火，移动
+         */
+        function MyPlane(_judge) {
+
+            this.timer = 0;
+            var _self = this;
+
+            /**
+             * 创建飞机
+             */
+            this.createPlane = function () {
+                this.mine = document.createElement("div");
+                this.mine.id = "mine";
+                this.div.appendChild(this.mine);
+            };
+
+            /**
+             * 创建子弹
+             */
+            this.createBullet = function () {
+                var _span = document.createElement("span");
+                _span.className = "bullet";
+                console.log(this.mine.offsetLeft);
+                _span.style.left = this.mine.offsetLeft + 49 - 2 + "px";
+//                _span.style.top = this.div.offsetHeight - this.mine.offsetHeight - 18 + "px";
+                _span.style.top = this.mine.offsetTop - 18 + "px"
+                this.div.appendChild(_span);
+            };
+
+            /**
+             * 让子弹飞
+             */
+            this.fly = function () {
+                for (var i = 0; i < document.getElementsByTagName("span").length; i++) {
+                    document.getElementsByTagName("span")[i].style.top =
+                        document.getElementsByTagName("span")[i].offsetTop - 28 + "px";
+                    try {
+                        _judge.judge();
+                        if (document.getElementsByTagName("span")[i].offsetTop <= -18) {
+                            this.div.removeChild(document.getElementsByTagName("span")[i]);
+                        }
+                    } catch (e) {
+                    }
+                }
+            };
+
+            /**
+             * 开火
+             */
+            this.fire = function () {
+                window.clearTimeout(_self.timer);
+                _self.fly();
+                _self.createBullet();
+                _self.timer = setTimeout(_self.fire, 30);
+            };
+
+            /**
+             * 移动飞机
+             */
+            this.ctrl = function () {
+                document.onmousemove = function (e) {
+                    e = e || event;
+                    var _left = e.clientX - _self.div.offsetLeft;
+                    var _top = e.clientY - _self.div.offsetTop;
+                    if (_left >= 49 && _left <= _self.div.offsetWidth - 49) {
+                        _self.mine.style.left = _left + "px";
+                        _self.mine.style.top = _top + "px";
+                    } else {
+                        if (_left < 49) {
+                            _self.mine.style.left = 49 + "px";
+                        } else {
+                            _self.mine.style.left = _self.div.offsetWidth - 49 + "px";
+                        }
+                    }
+                }
+            };
+
+            /**
+             * 初始化
+             */
+            this.init = function () {
+                this.createPlane();
+                this.createBullet();
+                this.fire();
+                this.ctrl();
+            }
+        }
+
+        /**
+         * 创建敌机
+         */
+        function Enemy() {
+            this.num = 0;
+            var _self = this;
+            this.timer = 0;
+            /**
+             * 敌机移动
+             */
+            this.fly = function () {
+                var _top = 0;
+                var _enemies = _self.div.getElementsByTagName("div");
+                for (var i = 0; i < _enemies.length; i++) {
+                    if (_enemies[i].id != "mine") {
+                        if (_enemies[i].className == "s_enemy") {
+                            _top = _enemies[i].offsetTop + _enemies[i].offsetHeight + 20;
+                        } else if (_enemies[i].className == "m_enemy") {
+                            _top = _enemies[i].offsetTop + _enemies[i].offsetHeight / 2 + 20;
+                        } else {
+                            _top = _enemies[i].offsetTop + _enemies[i].offsetHeight / 5 + 20;
+                        }
+                        _enemies[i].style.top = _top + "px";
+                        if (_enemies[i].offsetTop >= _self.div.offsetHeight) {
+                            _self.div.removeChild(_enemies[i]);
+                        }
+                    }
+                }
+            };
+            /**
+             * 创建敌机
+             */
+            this.createEnemy = function () {
+                window.clearTimeout(_self.timer);
+                _self.num += 600;
+                var _div = document.createElement("div");
+                _div.hurt = 0;
+                if (_self.num % 30000 == 0) {
+                    _self.num = 0;
+                    _div.className = "b_enemy";
+                } else if (_self.num % 6000 == 0) {
+                    _div.className = "m_enemy";
+                } else {
+                    _div.className = "s_enemy";
+                }
+                _self.div.appendChild(_div);
+                _div.style.left = Math.floor(Math.random() * (_self.div.offsetWidth - _div.offsetWidth)) + "px";
+                _self.fly();
+                _self.timer = setTimeout(_self.createEnemy, 600);
+            };
+            /**
+             * 初始化
+             */
+            this.init = function () {
+                this.createEnemy();
+                this.fly();
+            }
+        }
+
+        /**
+         * 创建裁判
+         */
+        function Judge() {
+            this.hurt = {
+                "s_enemy": 1,
+                "m_enemy": 10,
+                "b_enemy": 100
+            }
+            this.judge = function () {
+                var _space = document.getElementById("bgSpace");
+                for (var i = 0; i < document.getElementsByTagName("span").length; i++) {
+                    for (var n = 0; n < _space.getElementsByTagName("div").length; n++) {
+                        if (_space.getElementsByTagName("div")[n]["id"] != "mine") {
+                            var top = document.getElementsByTagName("span")[i].offsetTop;
+                            var left = document.getElementsByTagName("span")[i].offsetLeft;
+                            if (top > _space.getElementsByTagName("div")[n].offsetTop
+                                &&
+                                top < _space.getElementsByTagName("div")[n].offsetTop + _space.getElementsByTagName("div")[n].offsetHeight
+                                &&
+                                left > _space.getElementsByTagName("div")[n].offsetLeft
+                                &&
+                                left < _space.getElementsByTagName("div")[n].offsetLeft + _space.getElementsByTagName("div")[n].offsetWidth)
+                            {
+                                _space.getElementsByTagName("div")[n].hurt = parseInt(_space.getElementsByTagName("div")[n].hurt) + 1;
+                                if (parseInt(_space.getElementsByTagName("div")[n].hurt) >= this.hurt[_space.getElementsByTagName("div")[n].className]) {
+                                    _space.removeChild(_space.getElementsByTagName("div")[n]);
+                                }
+                                _space.removeChild(document.getElementsByTagName("span")[i]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function main() {
+
+            var _bg = new createBg();
+            _bg.init();
+
+            var _judge = new Judge();
+
+            MyPlane.prototype = _bg;
+            var _mp = new MyPlane(_judge);
+            _mp.init();
+
+            Enemy.prototype = _bg;
+            var _ep = new Enemy();
+            _ep.init();
+        }
+        window.onload = main;
+    </script>
+
+</head>
+<body>
+
+</body>
+</html>
